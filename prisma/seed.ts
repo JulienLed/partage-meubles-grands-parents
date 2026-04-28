@@ -167,9 +167,9 @@ async function main() {
       addedVia: "seed",
     },
     {
-      name: "Vélo d'intérieur",
+      name: "Vélo d’intérieur",
       quantity: 1,
-      photoUrl: "/Vélo d'intérieur.jpg",
+      photoUrl: "/Vélo d’intérieur.jpg",
       addedVia: "seed",
     },
     {
@@ -218,9 +218,9 @@ async function main() {
       addedVia: "seed",
     },
     {
-      name: "Douille d'obus",
+      name: "Douille d’obus",
       quantity: 1,
-      photoUrl: "/Douille d'obus.jpg",
+      photoUrl: "/Douille d’obus.jpg",
       addedVia: "seed",
     },
     {
