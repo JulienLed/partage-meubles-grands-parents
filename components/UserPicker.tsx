@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { VALID_USERS } from "@/lib/users";
+import { DownloadPDFButton } from "@/components/DownloadPDFButton";
 
 export function UserPicker() {
   const router = useRouter();
@@ -33,6 +35,17 @@ export function UserPicker() {
               {name}
             </button>
           ))}
+        </div>
+
+        {/* Liens discrets en bas de carte */}
+        <div className="border-t border-[var(--color-warm-200)] pt-4 w-full flex justify-center gap-6">
+          <DownloadPDFButton />
+          <Link
+            href="/inventory/new"
+            className="text-xs text-[var(--color-warm-400)] underline underline-offset-2 hover:text-[var(--color-warm-600)] transition-colors"
+          >
+            Gérer l&apos;inventaire
+          </Link>
         </div>
       </div>
     </div>

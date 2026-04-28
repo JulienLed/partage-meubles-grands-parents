@@ -43,10 +43,11 @@ describe("UserPicker — rendu", () => {
     }
   });
 
-  it("affiche exactement 19 boutons de sélection", () => {
+  it("affiche un bouton de sélection pour chacun des 19 prénoms", () => {
     render(<UserPicker />);
-    const buttons = screen.getAllByRole("button");
-    expect(buttons.length).toBe(VALID_USERS.length);
+    for (const name of VALID_USERS) {
+      expect(screen.getByRole("button", { name })).toBeInTheDocument();
+    }
   });
 
   it("affiche un titre ou texte d'invitation", () => {

@@ -45,45 +45,92 @@ export function SuggestClient({ items: initialItems }: Props) {
     setCurrentUser(name);
   }, [router]);
 
+  // --- Optimistic select ---
   async function handleSelect(itemId: number, quantity: number) {
     if (!currentUser) return;
+
+    const prevItems = items;
+    const item = items.find((i) => i.id === itemId);
+    const tempId = -Date.now();
+
+    // Mise à jour optimiste immédiate
+    setItems((prev) =>
+      prev.map((i) => {
+        if (i.id !== itemId) return i;
+        return {
+          ...i,
+          availableQty: i.availableQty - quantity,
+          suggestions: [
+            ...i.suggestions,
+            { id: tempId, inventoryItemId: itemId, suggestedBy: currentUser, quantity, comment: null, createdAt: new Date() },
+          ],
+        };
+      })
+    );
+
     const res = await fetch("/api/suggestions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ inventoryItemId: itemId, suggestedBy: currentUser, quantity }),
     });
-    if (res.status === 409) {
-      toast.error("Désolé, cet objet n'est plus disponible.");
-      return;
-    }
+
     if (!res.ok) {
-      toast.error("Une erreur est survenue.");
+      setItems(prevItems); // rollback
+      if (res.status === 409) toast.error("Désolé, cet objet n'est plus disponible.");
+      else toast.error("Une erreur est survenue. Réessaye.");
       return;
     }
-    toast.success("Votre souhait a été enregistré ✓");
-    refreshItems();
+
+    // Remplace la suggestion temporaire par la vraie
+    const created: Suggestion = await res.json();
+    setItems((prev) =>
+      prev.map((i) => {
+        if (i.id !== itemId) return i;
+        return {
+          ...i,
+          suggestions: i.suggestions.map((s) => (s.id === tempId ? created : s)),
+        };
+      })
+    );
+
+    toast.success(`✓ ${item?.name ?? "Objet"} ajouté à tes choix`);
   }
 
+  // --- Optimistic cancel ---
   async function handleCancel(suggestionId: number) {
     if (!currentUser) return;
+
+    const prevItems = items;
+    let itemName = "";
+    let removedQty = 0;
+
+    setItems((prev) =>
+      prev.map((i) => {
+        const sug = i.suggestions.find((s) => s.id === suggestionId);
+        if (!sug) return i;
+        itemName = i.name;
+        removedQty = sug.quantity;
+        return {
+          ...i,
+          availableQty: i.availableQty + sug.quantity,
+          suggestions: i.suggestions.filter((s) => s.id !== suggestionId),
+        };
+      })
+    );
+
     const res = await fetch(
       `/api/suggestions/${suggestionId}?user=${encodeURIComponent(currentUser)}`,
       { method: "DELETE" }
     );
+
     if (!res.ok) {
-      toast.error("Impossible de supprimer ce souhait.");
+      setItems(prevItems); // rollback
+      toast.error("Impossible d'annuler ce souhait.");
       return;
     }
-    toast.success("Souhait annulé.");
-    refreshItems();
-  }
 
-  async function refreshItems() {
-    const res = await fetch("/api/items");
-    if (res.ok) {
-      const data = await res.json();
-      setItems(data.items);
-    }
+    void removedQty; // utilisé pour l'optimistic update
+    toast.success(`Choix annulé${itemName ? ` — ${itemName}` : ""}`);
   }
 
   if (!currentUser) return null;
@@ -92,27 +139,28 @@ export function SuggestClient({ items: initialItems }: Props) {
     <main className="min-h-svh px-4 py-8">
       <div className="mx-auto max-w-5xl flex flex-col gap-6">
         {/* En-tête */}
-        <div className="glass px-6 py-4 flex items-center justify-between">
+        <div className="glass px-6 py-4 flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 className="text-xl font-semibold text-[var(--color-warm-900)]">
               Inventaire des meubles
             </h1>
             <p className="text-sm text-[var(--color-warm-500)]">
-              Bonjour {currentUser} — sélectionnez les objets qui vous intéressent
+              Bonjour <span className="font-medium text-[var(--color-warm-700)]">{currentUser}</span> — sélectionne les objets qui t&apos;intéressent
             </p>
           </div>
-          <div className="flex gap-3 text-sm">
+          <div className="flex items-center gap-3 text-sm flex-wrap">
+            {/* Point 3 — Ce n'est pas moi */}
+            <button
+              onClick={() => router.replace("/")}
+              className="text-xs text-[var(--color-warm-400)] underline underline-offset-2 hover:text-[var(--color-warm-600)] transition-colors"
+            >
+              Ce n&apos;est pas moi
+            </button>
             <Link
               href="/recap"
               className="rounded-lg border border-[var(--color-warm-300)] px-3 py-1.5 text-[var(--color-warm-700)] hover:bg-[var(--color-warm-100)] transition-colors"
             >
               Voir le récap
-            </Link>
-            <Link
-              href="/inventory/new"
-              className="rounded-lg border border-[var(--color-accent)] px-3 py-1.5 text-[var(--color-accent)] hover:bg-[var(--color-warm-100)] transition-colors"
-            >
-              + Ajouter un objet
             </Link>
           </div>
         </div>

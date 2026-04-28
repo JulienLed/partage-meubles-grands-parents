@@ -1,5 +1,8 @@
 import React from "react";
-import { Document, Page, View, Text, StyleSheet } from "@react-pdf/renderer";
+import { Document, Page, View, Text, StyleSheet, type DocumentProps } from "@react-pdf/renderer";
+
+// Ré-export du type pour les tests
+export type { DocumentProps };
 
 // ── Palette familiale ─────────────────────────────────────────────────────────
 const CREAM      = "#faf8f5";
@@ -102,6 +105,24 @@ const s = StyleSheet.create({
     fontSize: 8,
     color: WARM_400,
   },
+  // Page "inventaire restant"
+  tableHeader: {
+    flexDirection: "row",
+    borderBottom: `1pt solid ${ACCENT}`,
+    paddingBottom: 4,
+    marginBottom: 6,
+  },
+  tableRow: {
+    flexDirection: "row",
+    paddingVertical: 4,
+    borderBottom: `0.5pt solid ${WARM_200}`,
+  },
+  colName: { flex: 3, fontSize: 10 },
+  colQty:  { flex: 1, fontSize: 10, textAlign: "center" },
+  colDesc: { flex: 3, fontSize: 9, color: WARM_600 },
+  colNameBold:  { flex: 3, fontSize: 10, fontFamily: "Helvetica-Bold" },
+  colQtyBold:   { flex: 1, fontSize: 10, textAlign: "center", fontFamily: "Helvetica-Bold" },
+  colDescBold:  { flex: 3, fontSize: 9, fontFamily: "Helvetica-Bold" },
 });
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -120,9 +141,18 @@ interface SuggestionRow {
   inventoryItem: InventoryItem;
 }
 
+export interface AvailableItem {
+  id: number;
+  name: string;
+  description?: string | null;
+  quantity: number;
+  availableQty: number;
+}
+
 export interface RecapPDFProps {
   byPerson: Record<string, SuggestionRow[]>;
   conflictCount: number;
+  availableItems?: AvailableItem[];
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -135,7 +165,7 @@ function formatDate(): string {
 }
 
 // ── Composant ─────────────────────────────────────────────────────────────────
-export function RecapPDF({ byPerson, conflictCount }: RecapPDFProps) {
+export function RecapPDF({ byPerson, conflictCount, availableItems }: RecapPDFProps) {
   const persons = Object.keys(byPerson).sort();
 
   return (
@@ -202,6 +232,45 @@ export function RecapPDF({ byPerson, conflictCount }: RecapPDFProps) {
           />
         </View>
       </Page>
+      {/* Page 2 — Inventaire restant (optionnelle) */}
+      {availableItems && availableItems.filter((i) => i.availableQty > 0).length > 0 && (
+        <Page size="A4" style={s.page}>
+          <Text style={s.title}>Inventaire disponible</Text>
+          <Text style={s.subtitle}>
+            Objets avec quantité disponible au {formatDate()}
+          </Text>
+
+          {/* En-tête tableau */}
+          <View style={s.tableHeader}>
+            <Text style={s.colNameBold}>Objet</Text>
+            <Text style={s.colQtyBold}>Dispo.</Text>
+            <Text style={s.colDescBold}>Description</Text>
+          </View>
+
+          {availableItems
+            .filter((i) => i.availableQty > 0)
+            .map((item) => (
+              <View key={item.id} style={s.tableRow}>
+                <Text style={s.colName}>{item.name}</Text>
+                <Text style={s.colQty}>
+                  {item.availableQty} / {item.quantity}
+                </Text>
+                <Text style={s.colDesc}>{item.description ?? ""}</Text>
+              </View>
+            ))}
+
+          {/* Pied de page */}
+          <View style={s.footer} fixed>
+            <Text style={s.footerText}>Partage des meubles — document confidentiel</Text>
+            <Text
+              style={s.footerText}
+              render={({ pageNumber, totalPages }) =>
+                `Page ${pageNumber} / ${totalPages}`
+              }
+            />
+          </View>
+        </Page>
+      )}
     </Document>
   );
 }

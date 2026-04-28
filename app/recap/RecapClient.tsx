@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { RecapRow } from "@/components/RecapRow";
-import { RecapPDF } from "@/components/RecapPDF";
+import { RecapPDF, type AvailableItem } from "@/components/RecapPDF";
 
 // PDFDownloadLink ne fonctionne qu'en client — ssr: false obligatoire
 const PDFDownloadLink = dynamic(
@@ -42,12 +42,20 @@ const POLL_INTERVAL = 30_000;
 
 export function RecapClient() {
   const [data, setData] = useState<RecapData | null>(null);
+  const [availableItems, setAvailableItems] = useState<AvailableItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchRecap = useCallback(async () => {
     try {
-      const res = await fetch("/api/recap");
-      if (res.ok) setData(await res.json());
+      const [recapRes, itemsRes] = await Promise.all([
+        fetch("/api/recap"),
+        fetch("/api/items"),
+      ]);
+      if (recapRes.ok) setData(await recapRes.json());
+      if (itemsRes.ok) {
+        const { items } = await itemsRes.json();
+        setAvailableItems(items);
+      }
     } finally {
       setLoading(false);
     }
@@ -89,12 +97,13 @@ export function RecapClient() {
                   <RecapPDF
                     byPerson={data.byPerson}
                     conflictCount={data.conflictCount}
+                    availableItems={availableItems}
                   />
                 }
                 fileName="meubles-grands-parents.pdf"
                 className="rounded-lg border border-[var(--color-accent)] px-3 py-1.5 text-[var(--color-accent)] hover:bg-[var(--color-warm-100)] transition-colors"
               >
-                {({ loading }) => (loading ? "Préparation…" : "Télécharger PDF")}
+                {({ loading: pdfLoading }) => (pdfLoading ? "Préparation…" : "Télécharger PDF")}
               </PDFDownloadLink>
             )}
           </div>
