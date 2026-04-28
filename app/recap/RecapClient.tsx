@@ -1,8 +1,16 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { RecapRow } from "@/components/RecapRow";
+import { RecapPDF } from "@/components/RecapPDF";
+
+// PDFDownloadLink ne fonctionne qu'en client — ssr: false obligatoire
+const PDFDownloadLink = dynamic(
+  () => import("@react-pdf/renderer").then((m) => m.PDFDownloadLink),
+  { ssr: false, loading: () => <span className="opacity-40">PDF…</span> }
+);
 
 interface InventoryItem {
   id: number;
@@ -75,13 +83,20 @@ export function RecapClient() {
             >
               ← Retour à l&apos;inventaire
             </Link>
-            <a
-              href="/api/export"
-              download="meubles-recap.pdf"
-              className="rounded-lg border border-[var(--color-accent)] px-3 py-1.5 text-[var(--color-accent)] hover:bg-[var(--color-warm-100)] transition-colors"
-            >
-              Exporter PDF
-            </a>
+            {data && (
+              <PDFDownloadLink
+                document={
+                  <RecapPDF
+                    byPerson={data.byPerson}
+                    conflictCount={data.conflictCount}
+                  />
+                }
+                fileName="meubles-grands-parents.pdf"
+                className="rounded-lg border border-[var(--color-accent)] px-3 py-1.5 text-[var(--color-accent)] hover:bg-[var(--color-warm-100)] transition-colors"
+              >
+                {({ loading }) => (loading ? "Préparation…" : "Télécharger PDF")}
+              </PDFDownloadLink>
+            )}
           </div>
         </div>
 
