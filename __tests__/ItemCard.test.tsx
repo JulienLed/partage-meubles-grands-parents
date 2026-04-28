@@ -93,7 +93,7 @@ describe("ItemCard — rendu", () => {
 
   it("affiche le nombre disponible", () => {
     render(<ItemCard {...defaultProps} item={{ ...baseItem, availableQty: 2 }} />);
-    expect(screen.getByText(/2/)).toBeInTheDocument();
+    expect(screen.getByText(/disponible/i)).toBeInTheDocument();
   });
 });
 

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function GET() {
+export async function GET(_req: Request) {
   const suggestions = await prisma.suggestion.findMany({
     include: { inventoryItem: true },
     orderBy: { createdAt: "asc" },

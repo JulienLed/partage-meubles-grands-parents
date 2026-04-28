@@ -1,11 +1,11 @@
 import { VideoBackground } from "@/components/VideoBackground";
-import { UserPicker } from "@/components/UserPicker";
+import { RecapClient } from "./RecapClient";
 
-export default function HomePage() {
+export default function RecapPage() {
   return (
     <>
       <VideoBackground />
-      <UserPicker />
+      <RecapClient />
     </>
   );
 }
