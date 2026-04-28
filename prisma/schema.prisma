@@ -1,0 +1,28 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model InventoryItem {
+  id          Int          @id @default(autoincrement())
+  name        String
+  description String?
+  quantity    Int
+  photoUrl    String?
+  notes       String?
+  addedVia    String?
+  suggestions Suggestion[]
+}
+
+model Suggestion {
+  id              Int           @id @default(autoincrement())
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id])
+  inventoryItemId Int
+  suggestedBy     String
+  quantity        Int           @default(1)
+  comment         String?
+  createdAt       DateTime      @default(now())
+}
