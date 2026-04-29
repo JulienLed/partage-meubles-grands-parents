@@ -218,7 +218,7 @@ export function RecapPDF({ byPerson, conflictCount, conflicts = [], availableIte
         <Text style={s.subtitle}>
           Récapitulatif généré le {formatDate()}
           {conflictCount > 0
-            ? `  —  ⚠️ ${conflictCount} conflit${conflictCount > 1 ? "s" : ""} à résoudre en famille`
+            ? `  —  💬 ${conflictCount} objet${conflictCount > 1 ? "s" : ""} a discuter en famille`
             : ""}
         </Text>
 
@@ -243,7 +243,7 @@ export function RecapPDF({ byPerson, conflictCount, conflicts = [], availableIte
                           {sug.inventoryItem.name}
                         </Text>
                         {sug.hasConflict && (
-                          <Text style={s.conflictBadge}>⚠️ En discussion</Text>
+                          <Text style={s.conflictBadge}>{"En discussion"}</Text>
                         )}
                       </View>
                       <Text style={s.itemMeta}>
@@ -274,9 +274,9 @@ export function RecapPDF({ byPerson, conflictCount, conflicts = [], availableIte
       {/* Page — Objets à départager (optionnelle) */}
       {conflicts.length > 0 && (
         <Page size="A4" style={s.page}>
-          <Text style={s.title}>Objets à départager</Text>
+          <Text style={s.title}>{"Objets a discuter en famille"}</Text>
           <Text style={s.subtitle}>
-            {conflicts.length} objet{conflicts.length > 1 ? "s" : ""} à discuter en famille — {formatDate()}
+            {conflicts.length} objet{conflicts.length > 1 ? "s" : ""} a discuter en famille — {formatDate()}
           </Text>
 
           <View style={s.conflictSection}>
@@ -289,7 +289,7 @@ export function RecapPDF({ byPerson, conflictCount, conflicts = [], availableIte
                   {c.item.quantity} disponible{c.item.quantity > 1 ? "s" : ""} — {c.totalDemanded} demandé{c.totalDemanded > 1 ? "s" : ""}
                   {"  →  "}{c.demands.map((d) => d.suggestedBy).join(" · ")}
                 </Text>
-                <Text style={s.conflictNote}>💬 À discuter en famille</Text>
+                <Text style={s.conflictNote}>{"En famille : a discuter"}</Text>
               </View>
             ))}
           </View>

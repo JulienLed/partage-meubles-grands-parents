@@ -130,31 +130,31 @@ describe("RecapRow — rendu", () => {
 // ── Badge conflit ─────────────────────────────────────────────────────────────
 
 describe("RecapRow — badge conflit", () => {
-  it("affiche le badge ⚠️ Conflit quand hasConflict = true", () => {
+  it("affiche le badge 💬 À discuter quand hasConflict = true", () => {
     render(
       <RecapRow person="Simon" suggestions={[suggestionAvecConflit]} />
     );
-    expect(screen.getByText(/conflit/i)).toBeInTheDocument();
+    expect(screen.getByText(/à discuter/i)).toBeInTheDocument();
   });
 
-  it("le badge contient ⚠️ ou un texte d'alerte", () => {
+  it("le badge contient 💬 et le texte À discuter", () => {
     render(
       <RecapRow person="Simon" suggestions={[suggestionAvecConflit]} />
     );
-    const badge = screen.getByText(/conflit/i);
-    expect(badge.textContent).toMatch(/⚠️|conflit|conflict/i);
+    const badge = screen.getByText(/à discuter/i);
+    expect(badge.textContent).toMatch(/discuter/i);
   });
 
   it("n'affiche PAS de badge quand hasConflict = false", () => {
     render(<RecapRow person="Julien" suggestions={suggestions} />);
-    expect(screen.queryByText(/conflit/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/à discuter/i)).not.toBeInTheDocument();
   });
 
-  it("n'affiche le badge que sur l'item en conflit, pas sur les autres", () => {
+  it("n'affiche le badge que sur l'item concerné, pas sur les autres", () => {
     const mixedSuggestions = [suggestions[0], suggestionAvecConflit];
     render(<RecapRow person="Test" suggestions={mixedSuggestions} />);
 
-    const badges = screen.getAllByText(/conflit/i);
+    const badges = screen.getAllByText(/à discuter/i);
     expect(badges).toHaveLength(1);
   });
 });

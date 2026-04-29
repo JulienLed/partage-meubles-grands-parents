@@ -107,19 +107,23 @@ export function ItemCard({ item, currentUser, onSelect, onCancel }: ItemCardProp
 
           {/* Note discrète */}
           {noteOpen ? (
-            <textarea
-              value={noteValue}
-              onChange={(e) => setNoteValue(e.target.value)}
-              onBlur={saveNote}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); saveNote(); }
-                if (e.key === "Escape") setNoteOpen(false);
-              }}
-              placeholder="Je peux céder si besoin…"
-              rows={2}
-              autoFocus
-              className="w-full resize-none rounded-md border border-[var(--color-warm-200)] bg-white/60 px-3 py-2 text-xs text-[var(--color-warm-700)] placeholder-[var(--color-warm-300)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
-            />
+            <div className="flex items-start gap-2">
+              <textarea
+                value={noteValue}
+                onChange={(e) => setNoteValue(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Escape") setNoteOpen(false); }}
+                placeholder="Je peux céder si besoin…"
+                rows={2}
+                autoFocus
+                className="flex-1 resize-none rounded-md border border-[var(--color-warm-200)] bg-white/60 px-3 py-2 text-xs text-[var(--color-warm-700)] placeholder-[var(--color-warm-300)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
+              />
+              <button
+                onClick={saveNote}
+                className="shrink-0 rounded-md bg-[var(--color-accent)] px-2 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-90"
+              >
+                Enregistrer
+              </button>
+            </div>
           ) : (
             <div className="flex flex-col gap-0.5">
               <button

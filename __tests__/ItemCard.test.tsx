@@ -190,14 +190,14 @@ describe("ItemCard — déjà sélectionné par currentUser", () => {
     ).toBeInTheDocument();
   });
 
-  it("blur sur le champ note appelle PATCH /api/suggestions/:id", async () => {
+  it("clic sur 'Enregistrer' appelle PATCH /api/suggestions/:id", async () => {
     const user = userEvent.setup();
     render(<ItemCard {...dejaSelectProps} />);
 
     await user.click(screen.getByRole("button", { name: /ajouter une note/i }));
     const textarea = screen.getByPlaceholderText(/je peux céder si besoin/i);
     await user.type(textarea, "Je laisse priorité à Simon");
-    await user.tab(); // déclenche blur → saveNote
+    await user.click(screen.getByRole("button", { name: /enregistrer/i }));
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(

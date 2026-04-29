@@ -86,8 +86,8 @@ export function RecapClient() {
               Récapitulatif des souhaits
             </h1>
             {data && data.conflictCount > 0 && (
-              <p className="text-sm text-red-600 font-medium">
-                ⚠️ {data.conflictCount} conflit{data.conflictCount > 1 ? "s" : ""} à résoudre en famille
+              <p className="text-sm text-amber-700 font-medium">
+                💬 {data.conflictCount} objet{data.conflictCount > 1 ? "s" : ""} à départager en famille
               </p>
             )}
           </div>
@@ -140,7 +140,7 @@ export function RecapClient() {
             {data!.conflicts.length > 0 && (
               <section className="glass flex flex-col gap-3 p-5 border border-amber-200">
                 <h2 className="text-base font-semibold text-amber-800">
-                  💬 Objets à départager
+                  💬 Objets à discuter en famille
                 </h2>
                 <ul className="flex flex-col gap-2">
                   {data!.conflicts.map((c) => (
