@@ -22,11 +22,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Item non trouvé" }, { status: 404 });
   }
 
-  const totalSuggested = item.suggestions.reduce((sum, s) => sum + s.quantity, 0);
-  const availableQty = item.quantity - totalSuggested;
-
-  if (availableQty <= 0 || Number(quantity) > availableQty) {
-    return NextResponse.json({ error: "Stock insuffisant" }, { status: 409 });
+  if (Number(quantity) > item.quantity) {
+    return NextResponse.json({ error: "Quantité supérieure au total de l'objet" }, { status: 400 });
   }
 
   const suggestion = await prisma.suggestion.create({

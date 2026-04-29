@@ -86,13 +86,13 @@ export function RecapRow({ person, suggestions }: RecapRowProps) {
                     × {s.quantity}
                   </span>
                   {s.hasConflict && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
-                      ⚠️ Conflit
+                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
+                      💬 Conflit
                     </span>
                   )}
                 </div>
                 {s.comment && (
-                  <p className="text-xs text-[var(--color-warm-500)] truncate">{s.comment}</p>
+                  <p className="text-xs italic text-[var(--color-warm-500)] truncate">{s.comment}</p>
                 )}
               </div>
             </li>

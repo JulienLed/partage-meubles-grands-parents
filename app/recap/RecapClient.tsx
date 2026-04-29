@@ -33,9 +33,16 @@ interface SuggestionWithConflict {
   inventoryItem: InventoryItem;
 }
 
+interface ConflictItem {
+  item: { id: number; name: string; quantity: number };
+  totalDemanded: number;
+  demands: { suggestedBy: string; quantity: number }[];
+}
+
 interface RecapData {
   byPerson: Record<string, SuggestionWithConflict[]>;
   conflictCount: number;
+  conflicts: ConflictItem[];
 }
 
 const POLL_INTERVAL = 30_000;
@@ -97,6 +104,7 @@ export function RecapClient() {
                   <RecapPDF
                     byPerson={data.byPerson}
                     conflictCount={data.conflictCount}
+                    conflicts={data.conflicts}
                     availableItems={availableItems}
                   />
                 }
@@ -127,6 +135,28 @@ export function RecapClient() {
                 suggestions={data!.byPerson[person]}
               />
             ))}
+
+            {/* Section "Objets à départager" */}
+            {data!.conflicts.length > 0 && (
+              <section className="glass flex flex-col gap-3 p-5 border border-amber-200">
+                <h2 className="text-base font-semibold text-amber-800">
+                  💬 Objets à départager
+                </h2>
+                <ul className="flex flex-col gap-2">
+                  {data!.conflicts.map((c) => (
+                    <li key={c.item.id} className="text-sm text-[var(--color-warm-800)]">
+                      <span className="font-medium">{c.item.name}</span>
+                      <span className="text-[var(--color-warm-500)]">
+                        {" "}({c.item.quantity} disponible{c.item.quantity > 1 ? "s" : ""} — {c.totalDemanded} demandé{c.totalDemanded > 1 ? "s" : ""})
+                      </span>
+                      {" → "}
+                      {c.demands.map((d) => d.suggestedBy).join(" · ")}
+                      <span className="ml-2 text-amber-700 italic">💬 À discuter en famille</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
           </div>
         )}
       </div>

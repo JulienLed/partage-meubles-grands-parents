@@ -22,8 +22,6 @@ interface Item {
   quantity: number;
   photoUrl?: string | null;
   notes?: string | null;
-  availableQty: number;
-  hasConflict: boolean;
   suggestions: Suggestion[];
 }
 
@@ -59,7 +57,6 @@ export function SuggestClient({ items: initialItems }: Props) {
         if (i.id !== itemId) return i;
         return {
           ...i,
-          availableQty: i.availableQty - quantity,
           suggestions: [
             ...i.suggestions,
             { id: tempId, inventoryItemId: itemId, suggestedBy: currentUser, quantity, comment: null, createdAt: new Date() },
@@ -76,8 +73,7 @@ export function SuggestClient({ items: initialItems }: Props) {
 
     if (!res.ok) {
       setItems(prevItems); // rollback
-      if (res.status === 409) toast.error("Désolé, cet objet n'est plus disponible.");
-      else toast.error("Une erreur est survenue. Réessaye.");
+      toast.error("Une erreur est survenue. Réessaye.");
       return;
     }
 
@@ -112,7 +108,6 @@ export function SuggestClient({ items: initialItems }: Props) {
         removedQty = sug.quantity;
         return {
           ...i,
-          availableQty: i.availableQty + sug.quantity,
           suggestions: i.suggestions.filter((s) => s.id !== suggestionId),
         };
       })

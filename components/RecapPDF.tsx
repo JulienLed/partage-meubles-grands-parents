@@ -105,6 +105,38 @@ const s = StyleSheet.create({
     fontSize: 8,
     color: WARM_400,
   },
+  // Section "Objets à départager"
+  conflictSection: {
+    marginBottom: 20,
+  },
+  conflictTitle: {
+    fontFamily: "Helvetica-Bold",
+    fontSize: 13,
+    color: CONFLICT,
+    borderBottom: `1pt solid ${CONFLICT}`,
+    paddingBottom: 4,
+    marginBottom: 10,
+  },
+  conflictRow: {
+    marginBottom: 6,
+    paddingLeft: 8,
+  },
+  conflictItemName: {
+    fontFamily: "Helvetica-Bold",
+    fontSize: 10,
+    color: WARM_900,
+  },
+  conflictMeta: {
+    fontSize: 8,
+    color: WARM_600,
+    marginTop: 1,
+  },
+  conflictNote: {
+    fontSize: 8,
+    color: CONFLICT,
+    fontFamily: "Helvetica-Oblique",
+    marginTop: 1,
+  },
   // Page "inventaire restant"
   tableHeader: {
     flexDirection: "row",
@@ -149,9 +181,16 @@ export interface AvailableItem {
   availableQty: number;
 }
 
+interface ConflictItem {
+  item: { id: number; name: string; quantity: number };
+  totalDemanded: number;
+  demands: { suggestedBy: string; quantity: number }[];
+}
+
 export interface RecapPDFProps {
   byPerson: Record<string, SuggestionRow[]>;
   conflictCount: number;
+  conflicts?: ConflictItem[];
   availableItems?: AvailableItem[];
 }
 
@@ -165,7 +204,7 @@ function formatDate(): string {
 }
 
 // ── Composant ─────────────────────────────────────────────────────────────────
-export function RecapPDF({ byPerson, conflictCount, availableItems }: RecapPDFProps) {
+export function RecapPDF({ byPerson, conflictCount, conflicts = [], availableItems }: RecapPDFProps) {
   const persons = Object.keys(byPerson).sort();
 
   return (
@@ -232,7 +271,42 @@ export function RecapPDF({ byPerson, conflictCount, availableItems }: RecapPDFPr
           />
         </View>
       </Page>
-      {/* Page 2 — Inventaire restant (optionnelle) */}
+      {/* Page — Objets à départager (optionnelle) */}
+      {conflicts.length > 0 && (
+        <Page size="A4" style={s.page}>
+          <Text style={s.title}>Objets à départager</Text>
+          <Text style={s.subtitle}>
+            {conflicts.length} objet{conflicts.length > 1 ? "s" : ""} à discuter en famille — {formatDate()}
+          </Text>
+
+          <View style={s.conflictSection}>
+            {conflicts.map((c) => (
+              <View key={c.item.id} style={s.conflictRow}>
+                <Text style={s.conflictItemName}>
+                  {c.item.name}
+                </Text>
+                <Text style={s.conflictMeta}>
+                  {c.item.quantity} disponible{c.item.quantity > 1 ? "s" : ""} — {c.totalDemanded} demandé{c.totalDemanded > 1 ? "s" : ""}
+                  {"  →  "}{c.demands.map((d) => d.suggestedBy).join(" · ")}
+                </Text>
+                <Text style={s.conflictNote}>💬 À discuter en famille</Text>
+              </View>
+            ))}
+          </View>
+
+          <View style={s.footer} fixed>
+            <Text style={s.footerText}>Partage des meubles — document confidentiel</Text>
+            <Text
+              style={s.footerText}
+              render={({ pageNumber, totalPages }) =>
+                `Page ${pageNumber} / ${totalPages}`
+              }
+            />
+          </View>
+        </Page>
+      )}
+
+      {/* Page — Inventaire restant (optionnelle) */}
       {availableItems && availableItems.filter((i) => i.availableQty > 0).length > 0 && (
         <Page size="A4" style={s.page}>
           <Text style={s.title}>Inventaire disponible</Text>

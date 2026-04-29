@@ -1,41 +1,59 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+interface ItemMeta {
+  quantity: number;
+  totalDemanded: number;
+  itemInfo: { id: number; name: string; quantity: number };
+  demands: { suggestedBy: string; quantity: number }[];
+}
+
 export async function GET(_req: Request) {
   const suggestions = await prisma.suggestion.findMany({
     include: { inventoryItem: true },
     orderBy: { createdAt: "asc" },
   });
 
-  // Calcule pour chaque item : quantity et ensemble des suggestedBy
-  const itemMeta: Record<number, { quantity: number; suggestedBy: Set<string> }> = {};
+  const itemMeta: Record<number, ItemMeta> = {};
 
   for (const s of suggestions) {
     if (!itemMeta[s.inventoryItemId]) {
       itemMeta[s.inventoryItemId] = {
         quantity: s.inventoryItem.quantity,
-        suggestedBy: new Set(),
+        totalDemanded: 0,
+        itemInfo: { id: s.inventoryItem.id, name: s.inventoryItem.name, quantity: s.inventoryItem.quantity },
+        demands: [],
       };
     }
-    itemMeta[s.inventoryItemId].suggestedBy.add(s.suggestedBy);
+    itemMeta[s.inventoryItemId].totalDemanded += s.quantity;
+    itemMeta[s.inventoryItemId].demands.push({ suggestedBy: s.suggestedBy, quantity: s.quantity });
   }
 
-  // Groupement par personne avec hasConflict sur chaque suggestion
+  // Groupement par personne avec hasConflict = sum(qty) > item.quantity
   const byPerson: Record<string, unknown[]> = {};
 
   for (const s of suggestions) {
     if (!byPerson[s.suggestedBy]) byPerson[s.suggestedBy] = [];
 
     const meta = itemMeta[s.inventoryItemId];
-    const hasConflict = meta.quantity === 1 && meta.suggestedBy.size >= 2;
+    const hasConflict = meta.totalDemanded > meta.quantity;
 
     byPerson[s.suggestedBy].push({ ...s, hasConflict });
   }
 
   // Nombre d'items distincts en situation de conflit
   const conflictCount = Object.values(itemMeta).filter(
-    (m) => m.quantity === 1 && m.suggestedBy.size >= 2
+    (m) => m.totalDemanded > m.quantity
   ).length;
 
-  return NextResponse.json({ byPerson, conflictCount });
+  // Section "Objets à départager"
+  const conflicts = Object.values(itemMeta)
+    .filter((m) => m.totalDemanded > m.quantity)
+    .map((m) => ({
+      item: m.itemInfo,
+      totalDemanded: m.totalDemanded,
+      demands: m.demands,
+    }));
+
+  return NextResponse.json({ byPerson, conflictCount, conflicts });
 }

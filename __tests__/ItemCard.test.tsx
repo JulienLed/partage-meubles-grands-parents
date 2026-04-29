@@ -4,7 +4,7 @@
  *
  * Composant attendu : components/ItemCard.tsx
  * Props :
- *   item         — InventoryItem enrichi (availableQty, hasConflict, suggestions[])
+ *   item         — InventoryItem (quantity, suggestions[])
  *   currentUser  — prénom de l'utilisateur courant
  *   onSelect     — (itemId: number, quantity: number) => void
  *   onCancel     — (suggestionId: number) => void
@@ -12,7 +12,7 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import "@testing-library/jest-dom/vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ItemCard } from "@/components/ItemCard";
 
@@ -23,16 +23,15 @@ vi.mock("next/image", () => ({
   ),
 }));
 
+// Mock fetch pour le PATCH note
+global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
+
 const baseItem = {
   id: 1,
   name: "Grande armoire",
   description: "H200 × L180 × P60 cm",
   quantity: 2,
   photoUrl: "/Grande Armoire.jpg",
-  notes: null,
-  addedVia: "seed",
-  availableQty: 2,
-  hasConflict: false,
   suggestions: [] as Array<{
     id: number;
     inventoryItemId: number;
@@ -59,7 +58,10 @@ const defaultProps = {
   onCancel: vi.fn(),
 };
 
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+  vi.clearAllMocks();
+  (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({ ok: true, json: async () => ({}) });
+});
 
 // ── Rendu de base ─────────────────────────────────────────────────────────────
 
@@ -90,24 +92,19 @@ describe("ItemCard — rendu", () => {
     const img = screen.getByRole("img");
     expect(img).toHaveAttribute("alt", expect.stringContaining("Grande armoire"));
   });
-
-  it("affiche le nombre disponible", () => {
-    render(<ItemCard {...defaultProps} item={{ ...baseItem, availableQty: 2 }} />);
-    expect(screen.getByText(/disponible/i)).toBeInTheDocument();
-  });
 });
 
-// ── État disponible ───────────────────────────────────────────────────────────
+// ── Sélection disponible — plus de blocage ────────────────────────────────────
 
-describe("ItemCard — disponible (availableQty > 0)", () => {
-  it("affiche le bouton 'Je veux cet objet' quand availableQty > 0", () => {
+describe("ItemCard — bouton de sélection toujours actif", () => {
+  it("affiche le bouton 'Je veux cet objet'", () => {
     render(<ItemCard {...defaultProps} />);
     expect(
       screen.getByRole("button", { name: /je veux cet objet/i })
     ).toBeInTheDocument();
   });
 
-  it("le bouton 'Je veux cet objet' est actif", () => {
+  it("le bouton est toujours actif (pas de disabled)", () => {
     render(<ItemCard {...defaultProps} />);
     expect(screen.getByRole("button", { name: /je veux cet objet/i })).toBeEnabled();
   });
@@ -121,32 +118,16 @@ describe("ItemCard — disponible (availableQty > 0)", () => {
 
     expect(onSelect).toHaveBeenCalledWith(1, 1);
   });
-});
 
-// ── État épuisé ───────────────────────────────────────────────────────────────
-
-describe("ItemCard — épuisé (availableQty = 0)", () => {
-  const epuiseProps = {
-    ...defaultProps,
-    item: { ...baseItem, availableQty: 0 },
-  };
-
-  it("le bouton est désactivé quand availableQty = 0", () => {
-    render(<ItemCard {...epuiseProps} />);
-    expect(screen.getByRole("button")).toBeDisabled();
-  });
-
-  it("la carte est visuellement grisée (classe CSS appropriée)", () => {
-    const { container } = render(<ItemCard {...epuiseProps} />);
-    // Vérifie que l'élément racine a une classe indiquant l'état désactivé
-    const card = container.firstChild as HTMLElement;
-    const classNames = card.className;
-    // Accepte "opacity-50", "grayscale", "disabled", ou combinaison
-    expect(
-      classNames.includes("opacity") ||
-      classNames.includes("grayscale") ||
-      classNames.includes("disabled")
-    ).toBe(true);
+  it("le bouton est actif même quand d'autres personnes ont déjà sélectionné l'objet", () => {
+    const autreSuggestion = { ...suggestionJulien, id: 99, suggestedBy: "Aurore" };
+    render(
+      <ItemCard
+        {...defaultProps}
+        item={{ ...baseItem, suggestions: [autreSuggestion] }}
+      />
+    );
+    expect(screen.getByRole("button", { name: /je veux cet objet/i })).toBeEnabled();
   });
 });
 
@@ -155,11 +136,7 @@ describe("ItemCard — épuisé (availableQty = 0)", () => {
 describe("ItemCard — déjà sélectionné par currentUser", () => {
   const dejaSelectProps = {
     ...defaultProps,
-    item: {
-      ...baseItem,
-      availableQty: 1,
-      suggestions: [suggestionJulien],
-    },
+    item: { ...baseItem, suggestions: [suggestionJulien] },
   };
 
   it("affiche 'Annuler' à la place de 'Je veux cet objet'", () => {
@@ -182,9 +159,52 @@ describe("ItemCard — déjà sélectionné par currentUser", () => {
     expect(onCancel).toHaveBeenCalledWith(42);
   });
 
-  it("le bouton 'Annuler' est actif (l'user peut toujours se désister)", () => {
+  it("le bouton 'Annuler' est actif", () => {
     render(<ItemCard {...dejaSelectProps} />);
     expect(screen.getByRole("button", { name: /annuler/i })).toBeEnabled();
+  });
+
+  it("affiche le lien 'Ajouter une note' après sélection", () => {
+    render(<ItemCard {...dejaSelectProps} />);
+    expect(screen.getByRole("button", { name: /ajouter une note/i })).toBeInTheDocument();
+  });
+
+  it("affiche 'Modifier la note' quand un commentaire existe déjà", () => {
+    render(
+      <ItemCard
+        {...defaultProps}
+        item={{ ...baseItem, suggestions: [{ ...suggestionJulien, comment: "Je peux céder si besoin" }] }}
+      />
+    );
+    expect(screen.getByRole("button", { name: /modifier la note/i })).toBeInTheDocument();
+  });
+
+  it("clic sur 'Ajouter une note' affiche le champ texte avec le bon placeholder", async () => {
+    const user = userEvent.setup();
+    render(<ItemCard {...dejaSelectProps} />);
+
+    await user.click(screen.getByRole("button", { name: /ajouter une note/i }));
+
+    expect(
+      screen.getByPlaceholderText(/je peux céder si besoin/i)
+    ).toBeInTheDocument();
+  });
+
+  it("blur sur le champ note appelle PATCH /api/suggestions/:id", async () => {
+    const user = userEvent.setup();
+    render(<ItemCard {...dejaSelectProps} />);
+
+    await user.click(screen.getByRole("button", { name: /ajouter une note/i }));
+    const textarea = screen.getByPlaceholderText(/je peux céder si besoin/i);
+    await user.type(textarea, "Je laisse priorité à Simon");
+    await user.tab(); // déclenche blur → saveNote
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        "/api/suggestions/42",
+        expect.objectContaining({ method: "PATCH" })
+      );
+    });
   });
 });
 
@@ -194,11 +214,7 @@ describe("ItemCard — sélectionné par quelqu'un d'autre", () => {
   const autreSuggestion = { ...suggestionJulien, id: 99, suggestedBy: "Aurore" };
   const autreProps = {
     ...defaultProps,
-    item: {
-      ...baseItem,
-      availableQty: 1,
-      suggestions: [autreSuggestion],
-    },
+    item: { ...baseItem, suggestions: [autreSuggestion] },
     currentUser: "Julien",
   };
 
