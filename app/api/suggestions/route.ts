@@ -26,14 +26,21 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Quantité supérieure au total de l'objet" }, { status: 400 });
   }
 
-  const suggestion = await prisma.suggestion.create({
-    data: {
-      inventoryItemId: Number(inventoryItemId),
-      suggestedBy,
-      quantity: Number(quantity),
-      comment: comment ?? null,
-    },
-  });
+  let suggestion;
+  try {
+    suggestion = await prisma.suggestion.create({
+      data: {
+        inventoryItemId: Number(inventoryItemId),
+        suggestedBy,
+        quantity: Number(quantity),
+        comment: comment ?? null,
+      },
+    });
+  } catch (err) {
+    console.error("[POST /api/suggestions] prisma.create failed:", err);
+    return NextResponse.json({ error: "Erreur base de données" }, { status: 500 });
+  }
 
+  console.log("[POST] payload complet:", JSON.stringify(suggestion));
   return NextResponse.json(suggestion, { status: 201 });
 }

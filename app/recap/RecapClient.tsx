@@ -55,8 +55,8 @@ export function RecapClient() {
   const fetchRecap = useCallback(async () => {
     try {
       const [recapRes, itemsRes] = await Promise.all([
-        fetch("/api/recap"),
-        fetch("/api/items"),
+        fetch("/api/recap", { cache: "no-store" }),
+        fetch("/api/items", { cache: "no-store" }),
       ]);
       if (recapRes.ok) setData(await recapRes.json());
       if (itemsRes.ok) {

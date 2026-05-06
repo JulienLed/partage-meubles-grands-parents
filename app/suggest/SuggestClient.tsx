@@ -72,6 +72,8 @@ export function SuggestClient({ items: initialItems }: Props) {
     });
 
     if (!res.ok) {
+      const body = await res.text().catch(() => "(unreadable)");
+      console.error("[handleSelect] POST failed:", res.status, body);
       setItems(prevItems); // rollback
       toast.error("Une erreur est survenue. Réessaye.");
       return;
