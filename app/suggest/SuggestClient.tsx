@@ -33,6 +33,7 @@ export function SuggestClient({ items: initialItems }: Props) {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<string | null>(null);
   const [items, setItems] = useState(initialItems);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     const name = localStorage.getItem("userName");
@@ -136,44 +137,63 @@ export function SuggestClient({ items: initialItems }: Props) {
     <main className="min-h-svh px-4 py-8">
       <div className="mx-auto max-w-5xl flex flex-col gap-6">
         {/* En-tête */}
-        <div className="glass px-6 py-4 flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h1 className="text-xl font-semibold text-[var(--color-warm-900)]">
-              Inventaire des meubles
-            </h1>
-            <p className="text-sm text-[var(--color-warm-500)]">
-              Bonjour <span className="font-medium text-[var(--color-warm-700)]">{currentUser}</span> — sélectionne les objets qui t&apos;intéressent
-            </p>
+        <div className="glass px-6 py-4 flex flex-col gap-3">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <h1 className="text-xl font-semibold text-[var(--color-warm-900)]">
+                Inventaire des meubles
+              </h1>
+              <p className="text-sm text-[var(--color-warm-500)]">
+                Bonjour <span className="font-medium text-[var(--color-warm-700)]">{currentUser}</span> — sélectionne les objets qui t&apos;intéressent
+              </p>
+            </div>
+            <div className="flex items-center gap-3 text-sm flex-wrap">
+              <button
+                onClick={() => router.replace("/")}
+                className="text-xs text-[var(--color-warm-400)] underline underline-offset-2 hover:text-[var(--color-warm-600)] transition-colors"
+              >
+                Ce n&apos;est pas moi
+              </button>
+              <Link
+                href="/recap"
+                className="rounded-lg border border-[var(--color-warm-300)] px-3 py-1.5 text-[var(--color-warm-700)] hover:bg-[var(--color-warm-100)] transition-colors"
+              >
+                Voir le récap
+              </Link>
+            </div>
           </div>
-          <div className="flex items-center gap-3 text-sm flex-wrap">
-            {/* Point 3 — Ce n'est pas moi */}
-            <button
-              onClick={() => router.replace("/")}
-              className="text-xs text-[var(--color-warm-400)] underline underline-offset-2 hover:text-[var(--color-warm-600)] transition-colors"
-            >
-              Ce n&apos;est pas moi
-            </button>
-            <Link
-              href="/recap"
-              className="rounded-lg border border-[var(--color-warm-300)] px-3 py-1.5 text-[var(--color-warm-700)] hover:bg-[var(--color-warm-100)] transition-colors"
-            >
-              Voir le récap
-            </Link>
-          </div>
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Rechercher un objet…"
+            className="w-full rounded-lg border border-[var(--color-warm-200)] bg-white/60 px-3 py-2 text-sm text-[var(--color-warm-800)] placeholder-[var(--color-warm-300)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
+          />
         </div>
 
         {/* Grille */}
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {items.map((item) => (
-            <ItemCard
-              key={item.id}
-              item={item}
-              currentUser={currentUser}
-              onSelect={handleSelect}
-              onCancel={handleCancel}
-            />
-          ))}
-        </div>
+        {(() => {
+          const filtered = items.filter((i) =>
+            i.name.toLowerCase().includes(search.toLowerCase())
+          );
+          return filtered.length === 0 ? (
+            <p className="text-center text-sm text-[var(--color-warm-400)]">
+              Aucun objet ne correspond à ta recherche.
+            </p>
+          ) : (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+              {filtered.map((item) => (
+                <ItemCard
+                  key={item.id}
+                  item={item}
+                  currentUser={currentUser}
+                  onSelect={handleSelect}
+                  onCancel={handleCancel}
+                />
+              ))}
+            </div>
+          );
+        })()}
       </div>
     </main>
   );
