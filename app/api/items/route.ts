@@ -28,16 +28,29 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "name et quantity sont requis" }, { status: 400 });
   }
 
-  const item = await prisma.inventoryItem.create({
-    data: {
-      name,
-      description: description ?? null,
-      quantity: Number(quantity),
-      notes: notes ?? null,
-      photoUrl: photoUrl ?? null,
-      addedVia: addedVia ?? "manual",
-    },
-  });
+  let item;
+  try {
+    item = await prisma.inventoryItem.create({
+      data: {
+        name,
+        description: description ?? null,
+        quantity: Number(quantity),
+        notes: notes ?? null,
+        photoUrl: photoUrl ?? null,
+        addedVia: addedVia ?? "manual",
+      },
+    });
+  } catch (err) {
+    if (typeof err === "object" && err !== null && "code" in err && err.code === "P2002") {
+      console.error(`[POST /api/items] nom déjà existant: "${name}"`);
+      return NextResponse.json({ error: "Un objet porte déjà ce nom" }, { status: 409 });
+    }
+    console.error(
+      `[POST /api/items] prisma.create failed for "${name}" (photoUrl="${photoUrl ?? "null"}"):`,
+      err
+    );
+    return NextResponse.json({ error: "Erreur lors de la création de l'objet" }, { status: 500 });
+  }
 
   return NextResponse.json(item, { status: 201 });
 }
